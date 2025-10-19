@@ -75,46 +75,52 @@ public final class UpdateManager
         return false;
     }
 
-           /*  private void announceUpdate()
+    /**
+     * Уведомление о новой версии теперь не отправляется в чат/консоль через info(),
+     * а только сохраняется в лог-файле, чтобы не беспокоить игроков/чат сервера.
+     */
+    private void announceUpdate()
+    {
+        final @Nullable String newestVersion = getNewestVersion();
+        StringBuilder sb = new StringBuilder("A new update is available: ").append(newestVersion).append('!');
+
+        int lineWidth = 80;
+        final StringBuilder changelogBuilder = new StringBuilder();
+        final @Nullable String changelog = getNewestVersionChangelog();
+        if (changelog != null)
         {
-            final @Nullable String newestVersion = getNewestVersion();
-            StringBuilder sb = new StringBuilder("A new update is available: ").append(newestVersion).append('!');
-   
-            int lineWidth = 80;
-            final StringBuilder changelogBuilder = new StringBuilder();
-            final @Nullable String changelog = getNewestVersionChangelog();
-            if (changelog != null)
+            for (final String item : changelog.split("\\r\\n"))
             {
-                for (final String item : changelog.split("\\r\\n"))
-                {
-                    if (item.length() > lineWidth)
-                        lineWidth = item.length();
-                    changelogBuilder.append(item).append('\n');
-                }
-                changelogBuilder.append('\n');
-                lineWidth = Math.min(lineWidth + 4, 160);
+                if (item.length() > lineWidth)
+                    lineWidth = item.length();
+                changelogBuilder.append(item).append('\n');
             }
-   
-            final String title = " [BigDoors " + newestVersion + "] ";
-            final char[] starsArr = new char[(int) Math.ceil((lineWidth - title.length()) / 2.0D)];
-            Arrays.fill(starsArr, '*');
-            final String stars = new String(starsArr);
-            final String header = stars + title + stars;
-   
-            sb.append("\n\n")
-              .append(header)
-              .append('\n')
-              .append(changelogBuilder)
-              .append("Please update:\n  https://www.spigotmc.org/resources/big-doors.58669/")
-              .append('\n');
-   
-            final char[] footer = new char[header.length()];
-            Arrays.fill(footer, '*');
-            sb.append(footer)
-              .append('\n');
-   
-            plugin.getMyLogger().info(sb.toString());
-        } */
+            changelogBuilder.append('\n');
+            lineWidth = Math.min(lineWidth + 4, 160);
+        }
+
+        final String title = " [BigDoors " + newestVersion + "] ";
+        final char[] starsArr = new char[(int) Math.ceil((lineWidth - title.length()) / 2.0D)];
+        Arrays.fill(starsArr, '*');
+        final String stars = new String(starsArr);
+        final String header = stars + title + stars;
+
+        sb.append("\n\n")
+          .append(header)
+          .append('\n')
+          .append(changelogBuilder)
+          .append("Please update:\n  https://www.spigotmc.org/resources/big-doors.58669/")
+          .append('\n');
+
+        final char[] footer = new char[header.length()];
+        Arrays.fill(footer, '*');
+        sb.append(footer)
+          .append('\n');
+
+        // Вместо отправки в чат/консоль через info(), пишем только в лог-файл.
+        plugin.getMyLogger().logMessageToLogFile(sb.toString());
+    }
+
     public void checkForUpdates()
     {
         if (announceUpdateCheck)
@@ -130,6 +136,7 @@ public final class UpdateManager
                 return;
             }
 
+            // По-прежнему вызываем announceUpdate(), но оно больше не пишет в чат/консоль.
             announceUpdate();
 
             if (downloadUpdates && result.getAge() >= plugin.getConfigLoader().downloadDelay())
